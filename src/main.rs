@@ -14,7 +14,7 @@ use routes::router;
 async fn main() -> std::io::Result<()> {
     dotenv::init();
 
-    let db: web::Data<database::AppState> = database::init();
+    let db: web::Data<database::AppState> = database::init().await;
 
     let port: u16 = std::env::var("PORT")
         .expect("`PORT` must be defined in `.env`.")

@@ -1,0 +1,16 @@
+BEGIN TRANSACTION;
+
+CREATE SCHEMA IF NOT EXIST doodleswap;
+
+CREATE TABLE IF NOT EXIST doodleswap.user (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(254) NOT NULL,
+    username VARCHAR(32) NOT NULL,
+    password_hash CHAR(60) NOT NULL,
+    pfp_path VARCHAR(255),
+    pfp_mime_type VARCHAR(50),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+END TRANSACTION;
+

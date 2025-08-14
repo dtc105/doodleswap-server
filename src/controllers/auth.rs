@@ -275,10 +275,26 @@ pub async fn register(
         }))
 }
 
-pub async fn change_password() -> Result<HttpResponse, Error> {
+pub async fn change_email(
+    req: HttpRequest,
+    body: web::Json<req::EmailChange>,
+    state: web::Data<AppState>
+) -> Result<HttpResponse, Error> {
     Ok(HttpResponse::NotImplemented().finish())
 }
 
-pub async fn change_username() -> Result<HttpResponse, Error> {
+pub async fn change_username(
+    req: HttpRequest,
+    body: web::Json<req::UsernameChange>,
+    state: web::Data<AppState>
+) -> Result<HttpResponse, Error> {
+    Ok(HttpResponse::NotImplemented().finish())
+}
+
+pub async fn change_password(
+    req: HttpRequest,
+    body: web::Json<req::PasswordChange>,
+    state: web::Data<AppState>
+) -> Result<HttpResponse, Error> {
     Ok(HttpResponse::NotImplemented().finish())
 }

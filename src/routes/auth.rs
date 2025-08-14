@@ -12,8 +12,9 @@ pub fn router(cfg: &mut ServiceConfig) {
                 scope("")
                     .wrap(AuthenticationMiddleware)
                     .route("/token", get().to(read_token))
-                    .route("/password", patch().to(change_password))
+                    .route("/email", patch().to(change_email))
                     .route("/username", patch().to(change_username))
+                    .route("/password", patch().to(change_password))
             )
     );
 }

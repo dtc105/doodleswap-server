@@ -5,13 +5,13 @@ use crate::{
     models::auth as models,
 };
 
-use actix_web::{Error, HttpResponse, cookie::Cookie, error, web};
+use actix_web::{Error, HttpMessage, HttpRequest, HttpResponse, cookie::Cookie, error, web};
 use bcrypt::{DEFAULT_COST, hash, verify};
 use chrono::{Duration, Utc};
 use jsonwebtoken::{EncodingKey, Header, encode};
 use validator::Validate;
 
-fn create_cookie<'a>(user_id: i64) -> Result<Cookie<'a>, actix_web::Error> {
+fn create_cookie<'a>(user_id: i32) -> Result<Cookie<'a>, actix_web::Error> {
     let secret: String = std::env::var("JWT_SECRET")
         .expect("Environment variable `JWT_SECRET` must be defined.");
 
@@ -50,7 +50,7 @@ fn create_cookie<'a>(user_id: i64) -> Result<Cookie<'a>, actix_web::Error> {
 /// - `500 Internal Server Error`: Server sided error
 ///
 /// # Example Request
-/// `GET /auth/login`
+/// `GET /auth/token`
 ///
 /// # Example Response 200
 /// ```
@@ -60,18 +60,34 @@ fn create_cookie<'a>(user_id: i64) -> Result<Cookie<'a>, actix_web::Error> {
 ///     "username": "JohnDoe123"
 /// }
 /// ```
-// pub async fn read_token(req: HttpRequest) -> Result<HttpResponse, Error> {
-//     let ext = req.extensions();
-//     let claims = ext
-//         .get::<Claims>()
-//         .ok_or_else(|| error::ErrorUnauthorized("No token."))?;
-//
-//     Ok(HttpResponse::Ok().json(responses::Response {
-//         id: claims.sub,
-//         role: claims.role.as_str().to_owned(),
-//         username: claims.username.as_str().to_owned(),
-//     }))
-// }
+pub async fn read_token(
+    req: HttpRequest,
+    state: web::Data<AppState>
+) -> Result<HttpResponse, Error> {
+    let ext = req.extensions();
+    let claims = ext
+        .get::<Claims>()
+        .ok_or_else(|| error::ErrorUnauthorized("No token."))?;
+
+    let user = sqlx::query_as!(
+        models::User,
+        r#"
+            SELECT *
+            FROM doodleswap.user
+            WHERE id = $1;
+        "#,
+        claims.sub
+    )
+    .fetch_one(&state.pool)
+    .await
+    .map_err(|e| error::ErrorNotFound(e.to_string()))?;
+
+    Ok(HttpResponse::Ok().json(res::TokenResponse {
+        id: claims.sub,
+        role: user.role,
+        username: user.username,
+    }))
+}
 
 /// Handles user login and assigns a JWT
 ///
@@ -233,7 +249,7 @@ pub async fn register(
     let password_hash = hash(&body.password, DEFAULT_COST)
         .map_err(|e| error::ErrorInternalServerError(e.to_string()))?;
 
-    let inserted_id: i64 = sqlx::query_scalar!(
+    let inserted_id: i32 = sqlx::query_scalar!(
         r#"
             INSERT INTO doodleswap.user(email, username, password_hash, role)
             VALUES ($1, $2, $3, 'user')
@@ -245,7 +261,7 @@ pub async fn register(
     )
     .fetch_one(&state.pool)
     .await
-    .map_err(|e| error::ErrorInternalServerError(e.to_string()))? as i64;
+    .map_err(|e| error::ErrorInternalServerError(e.to_string()))?;
 
     // Sign the token and create a cookie
     let cookie = create_cookie(inserted_id)?;

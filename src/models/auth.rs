@@ -2,7 +2,7 @@ use chrono::NaiveDateTime;
 
 #[derive(Debug)]
 pub struct User {
-    pub id: i64,
+    pub id: i32,
     pub email: String,
     pub username: String,
     pub password_hash: String,

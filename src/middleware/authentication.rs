@@ -12,7 +12,7 @@ use std::future::{Ready, ready};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Claims {
-    pub sub: i64,
+    pub sub: i32,
     pub iat: i64,
     pub exp: i64,
 }

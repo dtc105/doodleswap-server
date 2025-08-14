@@ -16,8 +16,11 @@ async fn main() -> std::io::Result<()> {
 
     let db: web::Data<database::AppState> = database::init().await;
 
+    let address = std::env::var("ADDRESS")
+        .expect("Environment variable `ADDRESS` must be defined.");
+
     let port: u16 = std::env::var("PORT")
-        .expect("`PORT` must be defined in `.env`.")
+        .expect("Environment variable `PORT` must be defined.")
         .parse()
         .unwrap();
 
@@ -28,7 +31,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(Logger::default())
             .configure(router)
     })
-    .bind(("127.0.0.1", port))?
+    .bind((address, port))?
     .run();
 
     println!("Server running on port {port}! 🚀");

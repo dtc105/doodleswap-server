@@ -6,7 +6,8 @@ pub struct AppState {
 }
 
 pub async fn init() -> Data<AppState> {
-    let database_url: String = std::env::var("DATABASE_URL").expect("DB_PATH must be set.");
+    let database_url: String = std::env::var("DATABASE_URL")
+        .expect("Environment variable `DATABASE_URL` must be defined.");
 
     let pool = PgPoolOptions::new()
         .max_connections(10)

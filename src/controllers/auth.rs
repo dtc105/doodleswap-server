@@ -11,23 +11,31 @@ use chrono::{Duration, Utc};
 use jsonwebtoken::{EncodingKey, Header, encode};
 use validator::Validate;
 
-fn sign_token(user: &models::User) -> Result<String, jsonwebtoken::errors::Error> {
-    let secret: String =
-        std::env::var("JWT_SECRET").expect("`JWT_SECRET` must be defined in `.env`.");
+fn create_cookie<'a>(user_id: i64) -> Result<Cookie<'a>, actix_web::Error> {
+    let secret: String = std::env::var("JWT_SECRET")
+        .expect("Environment variable `JWT_SECRET` must be defined.");
 
     let iat: i64 = Utc::now().timestamp();
     let exp: i64 = iat + Duration::days(30).num_seconds();
 
     let claims: Claims = Claims {
-        sub: user.id,
+        sub: user_id,
         iat,
         exp,
     };
 
-    encode(
+    let token = encode(
         &Header::default(),
         &claims,
         &EncodingKey::from_secret(secret.as_bytes()),
+    ).map_err(|_| error::ErrorInternalServerError(format!("Issue signing token for user with id: {user_id}.")))?;
+
+    Ok(
+        Cookie::build("Authorization", token)
+            .http_only(true)
+            .secure(false)
+            .path("/")
+            .finish()
     )
 }
 
@@ -130,15 +138,8 @@ pub async fn login(
         );
     }
 
-    // Sign a token
-    let token: String =
-        sign_token(&user).map_err(|e| error::ErrorInternalServerError(e.to_string()))?;
-
-    let cookie = Cookie::build("Authorization", token.clone())
-        .http_only(true)
-        .secure(false)
-        .path("/")
-        .finish();
+    // Sign the token and create a cookie
+    let cookie = create_cookie(user.id)?;
 
     return Ok(HttpResponse::Ok().cookie(cookie).json(res::LoginResponse {
         id: user.id,
@@ -246,34 +247,15 @@ pub async fn register(
     .await
     .map_err(|e| error::ErrorInternalServerError(e.to_string()))? as i64;
 
-    let body = body.into_inner();
-
-    let new_user: models::User = models::User {
-        id: inserted_id,
-        email: body.email,
-        username: body.username,
-        password_hash,
-        role: "user".to_string(),
-        pfp_path: None,
-        pfp_mime_type: None,
-        created_at: Utc::now().naive_utc(),
-    };
-
-    let token =
-        sign_token(&new_user).map_err(|e| error::ErrorInternalServerError(e.to_string()))?;
-
-    let cookie = Cookie::build("Authorization", token.clone())
-        .http_only(true)
-        .secure(false)
-        .path("/")
-        .finish();
+    // Sign the token and create a cookie
+    let cookie = create_cookie(inserted_id)?;
 
     Ok(HttpResponse::Created()
         .cookie(cookie)
         .json(res::RegistrationResponse {
             id: inserted_id,
             role: "user".to_string(),
-            username: new_user.username,
+            username: body.into_inner().username,
         }))
 }
 

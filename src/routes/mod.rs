@@ -1,7 +1,12 @@
 mod auth;
+mod character;
 
 use actix_web::web::{ServiceConfig, scope};
 
 pub fn router(cfg: &mut ServiceConfig) {
-    cfg.service(scope("").configure(auth::router));
+    cfg.service(
+        scope("")
+            .configure(auth::router)
+            .configure(character::router)
+    );
 }

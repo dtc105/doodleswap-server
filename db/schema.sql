@@ -1,18 +1,6 @@
-SET statement_timeout = 0;
-SET lock_timeout = 0;
-SET idle_in_transaction_session_timeout = 0;
-SET transaction_timeout = 0;
-SET client_encoding = 'UTF8';
-SET standard_conforming_strings = on;
-SELECT pg_catalog.set_config('search_path', '', false);
-SET check_function_bodies = false;
-SET xmloption = content;
-SET client_min_messages = warning;
-SET row_security = off;
+CREATE SCHEMA IF NOT EXISTS doodleswap;
 
-CREATE SCHEMA doodleswap;
-
-CREATE TABLE doodleswap."user" (
+CREATE TABLE IF NOT EXISTS doodleswap.user (
     id SERIAL PRIMARY KEY,
     email VARCHAR(254) NOT NULL,
     username VARCHAR(32) NOT NULL,
@@ -21,4 +9,16 @@ CREATE TABLE doodleswap."user" (
     pfp_mime_type VARCHAR(50),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     role VARCHAR(5) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS doodleswap.character (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    first_name VARCHAR(32) NOT NULL,
+    last_name VARCHAR(32),
+    pronouns VARCHAR(32),
+    quote VARCHAR(100),
+    image_path VARCHAR(255) NOT NULL,
+    image_mime_type VARCHAR(50) NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES doodleswap.user(id) ON DELETE CASCADE
 );

@@ -1,22 +1,15 @@
 use crate::{
     config::database::AppState,
-    dto::{
-        errors::auth as err,
-        requests::auth as req,
-        responses::auth as res
-    },
+    dto::{errors::auth as err, requests::auth as req, responses::auth as res},
     middleware::authentication::Claims,
     models::auth as models,
 };
 
 use actix_web::{
-    Error,
-    HttpMessage,
-    HttpRequest,
-    HttpResponse,
+    Error, HttpMessage, HttpRequest, HttpResponse,
     cookie::Cookie,
     error,
-    web::{Data, Json}
+    web::{Data, Json},
 };
 use bcrypt::{DEFAULT_COST, hash, verify};
 use chrono::{Duration, Utc};
@@ -24,8 +17,8 @@ use jsonwebtoken::{EncodingKey, Header, encode};
 use validator::Validate;
 
 fn create_cookie<'a>(user_id: i32) -> Result<Cookie<'a>, Error> {
-    let secret: String = std::env::var("JWT_SECRET")
-        .expect("Environment variable `JWT_SECRET` must be defined.");
+    let secret: String =
+        std::env::var("JWT_SECRET").expect("Environment variable `JWT_SECRET` must be defined.");
 
     let iat: i64 = Utc::now().timestamp();
     let exp: i64 = iat + Duration::days(30).num_seconds();
@@ -40,15 +33,16 @@ fn create_cookie<'a>(user_id: i32) -> Result<Cookie<'a>, Error> {
         &Header::default(),
         &claims,
         &EncodingKey::from_secret(secret.as_bytes()),
-    ).map_err(|_| error::ErrorInternalServerError(format!("Issue signing token for user with id: {user_id}.")))?;
-
-    Ok(
-        Cookie::build("Authorization", token)
-            .http_only(true)
-            .secure(false)
-            .path("/")
-            .finish()
     )
+    .map_err(|_| {
+        error::ErrorInternalServerError(format!("Issue signing token for user with id: {user_id}."))
+    })?;
+
+    Ok(Cookie::build("Authorization", token)
+        .http_only(true)
+        .secure(false)
+        .path("/")
+        .finish())
 }
 
 /// Reads the users token
@@ -72,10 +66,7 @@ fn create_cookie<'a>(user_id: i32) -> Result<Cookie<'a>, Error> {
 ///     "username": "JohnDoe123"
 /// }
 /// ```
-pub async fn read_token(
-    req: HttpRequest,
-    state: Data<AppState>
-) -> Result<HttpResponse, Error> {
+pub async fn read_token(req: HttpRequest, state: Data<AppState>) -> Result<HttpResponse, Error> {
     let ext = req.extensions();
     let claims = ext
         .get::<Claims>()
@@ -290,7 +281,7 @@ pub async fn register(
 pub async fn change_email(
     req: HttpRequest,
     body: Json<req::EmailChange>,
-    state: Data<AppState>
+    state: Data<AppState>,
 ) -> Result<HttpResponse, Error> {
     Ok(HttpResponse::NotImplemented().finish())
 }
@@ -298,7 +289,7 @@ pub async fn change_email(
 pub async fn change_username(
     req: HttpRequest,
     body: Json<req::UsernameChange>,
-    state: Data<AppState>
+    state: Data<AppState>,
 ) -> Result<HttpResponse, Error> {
     Ok(HttpResponse::NotImplemented().finish())
 }
@@ -306,7 +297,8 @@ pub async fn change_username(
 pub async fn change_password(
     req: HttpRequest,
     body: Json<req::PasswordChange>,
-    state: Data<AppState>
+    state: Data<AppState>,
 ) -> Result<HttpResponse, Error> {
     Ok(HttpResponse::NotImplemented().finish())
 }
+

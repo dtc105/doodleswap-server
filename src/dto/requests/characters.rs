@@ -1,9 +1,11 @@
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
-pub struct CreateCharacter {
-	pub first_name: String,
-	pub last_name: Option<String>,
-	pub pronouns: Option<String>,
-	pub quote: Option<String>
+pub struct CreateCharacterData {
+    #[serde(rename = "firstName")]
+    pub first_name: String,
+    #[serde(rename = "lastName")]
+    pub last_name: Option<String>,
+    pub pronouns: Option<String>,
+    pub quote: Option<String>,
 }

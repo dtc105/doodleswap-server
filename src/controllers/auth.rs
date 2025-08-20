@@ -152,9 +152,7 @@ pub async fn login(
         .map_err(|e| error::ErrorInternalServerError(e.to_string()))?;
 
     if !is_password_correct {
-        return Ok(
-            HttpResponse::Unauthorized().json(err::unauthorized("Incorrect username or password."))
-        );
+        return Ok(err::incorrect_credentials());
     }
 
     // Sign the token and create a cookie
@@ -226,7 +224,7 @@ pub async fn register(
     .map_err(|e| error::ErrorInternalServerError(e.to_string()))?;
 
     if username_taken {
-        return Ok(HttpResponse::Conflict().json(err::username_taken()));
+        return Ok(err::username_taken());
     }
 
     // Check if email is taken
@@ -245,7 +243,7 @@ pub async fn register(
     .map_err(|e| error::ErrorInternalServerError(e.to_string()))?;
 
     if email_taken {
-        return Ok(HttpResponse::Conflict().json(err::email_taken()));
+        return Ok(err::email_taken());
     }
 
     // Hash the password and insert it into the database
@@ -301,4 +299,3 @@ pub async fn change_password(
 ) -> Result<HttpResponse, Error> {
     Ok(HttpResponse::NotImplemented().finish())
 }
-

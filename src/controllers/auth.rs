@@ -5,15 +5,20 @@ use crate::{
     models::auth as models,
 };
 
-use actix_web::{Error, HttpMessage, HttpRequest, HttpResponse, cookie::Cookie, error, web};
+use actix_web::{
+    Error, HttpMessage, HttpRequest, HttpResponse,
+    cookie::Cookie,
+    error,
+    web::{Data, Json},
+};
 use bcrypt::{DEFAULT_COST, hash, verify};
 use chrono::{Duration, Utc};
 use jsonwebtoken::{EncodingKey, Header, encode};
 use validator::Validate;
 
-fn create_cookie<'a>(user_id: i32) -> Result<Cookie<'a>, actix_web::Error> {
-    let secret: String = std::env::var("JWT_SECRET")
-        .expect("Environment variable `JWT_SECRET` must be defined.");
+fn create_cookie<'a>(user_id: i32) -> Result<Cookie<'a>, Error> {
+    let secret: String =
+        std::env::var("JWT_SECRET").expect("Environment variable `JWT_SECRET` must be defined.");
 
     let iat: i64 = Utc::now().timestamp();
     let exp: i64 = iat + Duration::days(30).num_seconds();
@@ -28,15 +33,16 @@ fn create_cookie<'a>(user_id: i32) -> Result<Cookie<'a>, actix_web::Error> {
         &Header::default(),
         &claims,
         &EncodingKey::from_secret(secret.as_bytes()),
-    ).map_err(|_| error::ErrorInternalServerError(format!("Issue signing token for user with id: {user_id}.")))?;
-
-    Ok(
-        Cookie::build("Authorization", token)
-            .http_only(true)
-            .secure(false)
-            .path("/")
-            .finish()
     )
+    .map_err(|_| {
+        error::ErrorInternalServerError(format!("Issue signing token for user with id: {user_id}."))
+    })?;
+
+    Ok(Cookie::build("Authorization", token)
+        .http_only(true)
+        .secure(false)
+        .path("/")
+        .finish())
 }
 
 /// Reads the users token
@@ -60,10 +66,7 @@ fn create_cookie<'a>(user_id: i32) -> Result<Cookie<'a>, actix_web::Error> {
 ///     "username": "JohnDoe123"
 /// }
 /// ```
-pub async fn read_token(
-    req: HttpRequest,
-    state: web::Data<AppState>
-) -> Result<HttpResponse, Error> {
+pub async fn read_token(req: HttpRequest, state: Data<AppState>) -> Result<HttpResponse, Error> {
     let ext = req.extensions();
     let claims = ext
         .get::<Claims>()
@@ -124,8 +127,8 @@ pub async fn read_token(
 /// }
 /// ```
 pub async fn login(
-    body: web::Json<req::LoginCredentials>,
-    state: web::Data<AppState>,
+    body: Json<req::LoginCredentials>,
+    state: Data<AppState>,
 ) -> Result<HttpResponse, Error> {
     // Validate body
     body.validate()
@@ -149,9 +152,7 @@ pub async fn login(
         .map_err(|e| error::ErrorInternalServerError(e.to_string()))?;
 
     if !is_password_correct {
-        return Ok(
-            HttpResponse::Unauthorized().json(err::unauthorized("Incorrect username or password."))
-        );
+        return Ok(err::incorrect_credentials());
     }
 
     // Sign the token and create a cookie
@@ -200,8 +201,8 @@ pub async fn login(
 /// }
 /// ```
 pub async fn register(
-    body: web::Json<req::RegistrationCredentials>,
-    state: web::Data<AppState>,
+    body: Json<req::RegistrationCredentials>,
+    state: Data<AppState>,
 ) -> Result<HttpResponse, Error> {
     // Validate body
     body.validate()
@@ -223,7 +224,7 @@ pub async fn register(
     .map_err(|e| error::ErrorInternalServerError(e.to_string()))?;
 
     if username_taken {
-        return Ok(HttpResponse::Conflict().json(err::username_taken()));
+        return Ok(err::username_taken());
     }
 
     // Check if email is taken
@@ -242,7 +243,7 @@ pub async fn register(
     .map_err(|e| error::ErrorInternalServerError(e.to_string()))?;
 
     if email_taken {
-        return Ok(HttpResponse::Conflict().json(err::email_taken()));
+        return Ok(err::email_taken());
     }
 
     // Hash the password and insert it into the database
@@ -277,24 +278,24 @@ pub async fn register(
 
 pub async fn change_email(
     req: HttpRequest,
-    body: web::Json<req::EmailChange>,
-    state: web::Data<AppState>
+    body: Json<req::EmailChange>,
+    state: Data<AppState>,
 ) -> Result<HttpResponse, Error> {
     Ok(HttpResponse::NotImplemented().finish())
 }
 
 pub async fn change_username(
     req: HttpRequest,
-    body: web::Json<req::UsernameChange>,
-    state: web::Data<AppState>
+    body: Json<req::UsernameChange>,
+    state: Data<AppState>,
 ) -> Result<HttpResponse, Error> {
     Ok(HttpResponse::NotImplemented().finish())
 }
 
 pub async fn change_password(
     req: HttpRequest,
-    body: web::Json<req::PasswordChange>,
-    state: web::Data<AppState>
+    body: Json<req::PasswordChange>,
+    state: Data<AppState>,
 ) -> Result<HttpResponse, Error> {
     Ok(HttpResponse::NotImplemented().finish())
 }

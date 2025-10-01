@@ -1,3 +1,5 @@
+use std::fs;
+
 use dotenv::dotenv;
 
 pub fn init() {
@@ -9,5 +11,10 @@ pub fn init() {
 
     dotenv().ok();
     env_logger::init();
+
+    let upload_path =
+        std::env::var("UPLOAD_PATH").expect("Environment variable `UPLOAD_PATH` must be defined.");
+    let _ = fs::create_dir_all(upload_path);
+
     println!("Environment variables loaded! 󰑓");
 }

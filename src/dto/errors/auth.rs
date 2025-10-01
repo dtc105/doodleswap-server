@@ -1,28 +1,24 @@
-use serde::Serialize;
+use super::HttpErrorBody;
 
-#[derive(Debug, Serialize)]
-pub struct AuthenticationError {
-    error: String,
-    message: String,
-}
+use actix_web::HttpResponse;
 
-pub fn unauthorized(message: &str) -> AuthenticationError {
-    AuthenticationError {
+pub fn incorrect_credentials() -> HttpResponse {
+    HttpResponse::Unauthorized().json(HttpErrorBody {
         error: "Unauthorized".to_string(),
-        message: message.to_string(),
-    }
+        message: "Username or password incorrect.".to_string(),
+    })
 }
 
-pub fn username_taken() -> AuthenticationError {
-    AuthenticationError {
+pub fn username_taken() -> HttpResponse {
+    HttpResponse::Conflict().json(HttpErrorBody {
         error: "Conflict".to_string(),
         message: "Username taken.".to_string(),
-    }
+    })
 }
 
-pub fn email_taken() -> AuthenticationError {
-    AuthenticationError {
+pub fn email_taken() -> HttpResponse {
+    HttpResponse::Conflict().json(HttpErrorBody {
         error: "Conflict".to_string(),
         message: "Email taken".to_string(),
-    }
+    })
 }
